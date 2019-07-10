@@ -6,7 +6,7 @@ using Siemens.Engineering.Cax;
 
 
 
-namespace CSVtoHW
+namespace HwGen
 {
   class Program
   {
@@ -32,33 +32,28 @@ namespace CSVtoHW
             path_to_file = GetArgumentValue(args, key);
             filename = Path.GetFileName(path_to_file);
             
-            if (!FileHasTheExtension(filename, ".aml"))
+            if (!CheckFile(path_to_file, ".aml", true))
             {
-              Console.WriteLine("Wrong file extension!");
-              Console.ReadKey();
               Environment.Exit(1);
+            } else
+            {
+              ImportFromAML(project_name, @project_path, path_to_file);
             }
-
             break;
           //Input file is CSV
           case "-c":
             path_to_file = GetArgumentValue(args, key);
-            filename = Path.GetFileName(path_to_file);
-            if (!FileHasTheExtension(filename, ".csv"))
+            
+            if (!CheckFile(path_to_file, ".csv", true))
             {
-              Console.WriteLine("Wrong file extension!");
-              Console.ReadKey();
               Environment.Exit(1);
             }
             break;
           //Input file is JSON
           case "-j":
             path_to_file = GetArgumentValue(args, key);
-            filename = Path.GetFileName(path_to_file);
-            if (!FileHasTheExtension(filename, ".json"))
+            if (!CheckFile(path_to_file, ".json", true))
             {
-              Console.WriteLine("Wrong file extension!");
-              Console.ReadKey();
               Environment.Exit(1);
             }
             break;
@@ -68,15 +63,10 @@ namespace CSVtoHW
 
       }
 
-      if (!new FileInfo(path_to_file).Exists)
-      {
-        Console.WriteLine("AML File does not exist!");
-        Console.ReadKey();
-        Environment.Exit(4);
-      }
+  
 
       // End of handling arguments
-      ImportFromAML(project_name, @project_path, path_to_file);
+      
       Console.WriteLine("Press any key to close application!");
       Console.ReadKey();
     }
@@ -99,10 +89,27 @@ namespace CSVtoHW
 
     }
 
-    // checking a filename extension AML
-    static bool FileHasTheExtension(string filename, string extension)
+    // checking a file
+    static bool CheckFile(string path_to_file, string extension, bool checkExist)
     {
-      return Path.GetExtension(filename) == extension;
+      string filename = Path.GetFileName(path_to_file);
+      if (checkExist)
+      {
+        if (!new FileInfo(filename).Exists)
+        {
+          Console.WriteLine("File does not exist!");
+          Console.ReadKey();
+          return false;
+        }
+      }
+      if(Path.GetExtension(filename) == extension)
+      {
+        Console.WriteLine("Wrong file extension!");
+        Console.ReadKey();
+        return false;
+
+      } 
+        return true;
     }
 
 
