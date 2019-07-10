@@ -2,16 +2,14 @@
 using System.Collections;
 using System.IO;
 using Siemens.Engineering;
+using Siemens.Engineering.HW;
 using Siemens.Engineering.Cax;
-
-
+using System.Collections.Generic;
 
 namespace HwGen
 {
   class Program
   {
-    private const char DEFAULT_DELIMITER = ',';
-    private const char DEFAULT_LINE_DELIMITER = '\n';
 
     static void Main(string[] args)
     {
@@ -43,10 +41,13 @@ namespace HwGen
           //Input file is CSV
           case "-c":
             path_to_file = GetArgumentValue(args, key);
-            
             if (!CheckFile(path_to_file, ".csv", true))
             {
               Environment.Exit(1);
+            }
+            else
+            {
+              ImportFromCSV(project_name, project_path, path_to_file);
             }
             break;
           //Input file is JSON
@@ -95,14 +96,14 @@ namespace HwGen
       string filename = Path.GetFileName(path_to_file);
       if (checkExist)
       {
-        if (!new FileInfo(filename).Exists)
+        if (!new FileInfo(path_to_file).Exists)
         {
           Console.WriteLine("File does not exist!");
           Console.ReadKey();
           return false;
         }
       }
-      if(Path.GetExtension(filename) == extension)
+      if(Path.GetExtension(filename) != extension)
       {
         Console.WriteLine("Wrong file extension!");
         Console.ReadKey();
@@ -179,7 +180,130 @@ namespace HwGen
 
 
     }
-  }
 
+    static void ImportFromCSV(string project_name, string project_path, string csv_file_name)
+    {
+      string[] raw_lines = { };
+      string[] headers;
+      string[] devices_prop; 
+      List<HWDevice> device_list = null;
+      DeviceComposition devices;
+      
+      try
+      {
+        raw_lines = File.ReadAllLines(csv_file_name);
+        string[] device_lines = new string[raw_lines.Length - 1];
+        Console.WriteLine(raw_lines.Length);
+        Console.ReadKey();
+        headers = raw_lines[0].Split(',');
+        Array.Copy(raw_lines, 1, device_lines, 0, raw_lines.Length-1);
+        Console.WriteLine(device_lines.Length);
+
+        foreach (string line in device_lines)
+        {
+          Console.WriteLine(line);
+
+          string[] properties = line.Split(',');
+          string group = properties[0];
+          string field = properties[1];
+          string name = properties[2];
+          string article_number = properties[3];
+          string address_range = properties[4];
+          string comment = properties[5];
+
+          device_list.Add(new HWDevice(group, field, name, article_number, address_range, comment));
+        }
+      }
+      catch(Exception e)
+      {
+        Console.WriteLine("{0}",e.ToString());
+        Console.ReadKey();
+        Environment.Exit(5);
+        
+      }
+
+      Console.ReadKey();
+      Environment.Exit(5);
+
+
+
+
+      Console.WriteLine("Connecting to TIA Portal...");
+      using (TiaPortal tiaPortal = new TiaPortal(TiaPortalMode.WithoutUserInterface))
+      {
+        if (tiaPortal != null)
+        {
+          Console.WriteLine("Connection is OK!");
+          Console.WriteLine("Creating Project...");
+          Project project = CreateProject(tiaPortal, project_name, project_path);
+          if(project!= null)
+          {
+            Console.WriteLine("The project is created!");
+            Console.WriteLine("Adding devices...");
+            foreach (HWDevice device in device_list)
+            {
+              try
+              {
+                CreateDevice(project, device.group + device.field + device.name, device.article_number);
+              }
+              catch(Exception e)
+              {
+                Console.WriteLine("Can't add device {0}:{1}", device.group + device.field + device.name, e.ToString());
+              }
+
+              Console.WriteLine("Device {0} added!", device.group + device.field + device.name);
+            }
+            Console.WriteLine("All devices added!");
+            Console.WriteLine("Saving project...");
+            project.Save();
+            Console.WriteLine("Save OK!");
+            Console.WriteLine("Closing project...");
+            project.Close();
+            Console.WriteLine("Project closed!");
+          }
+          
+          Console.WriteLine("Disconnecting from TIA Portal...");
+          tiaPortal.Dispose();
+          Console.WriteLine("TIA Portal disconnected!");
+        }
+      }
+    }
+
+    static Device CreateDevice(Project project, string device_name, string article_number)
+    {
+      try
+      {
+        Device device = project.Devices.Create(article_number, device_name);
+        return device;
+      } catch (Exception e)
+      {
+        Console.WriteLine("Could not create device! Error: {0}", e.ToString());
+        Console.ReadKey();
+        Environment.Exit(6);
+      }
+      return null;
+    }
+  }
+  
+  class HWDevice
+  {
+    public string field;
+    public string name;
+    public string article_number;
+    public string address_range;
+    public string comment;
+    public string group;
+
+    public HWDevice(string group, string device_field, string device_name, string device_article_number, string device_address_range, string device_comment)
+    {
+      field = device_field;
+      name = device_name;
+      article_number = device_article_number;
+      address_range = device_address_range;
+      comment = device_comment;
+    }
+
+  }
+   
 
 }
