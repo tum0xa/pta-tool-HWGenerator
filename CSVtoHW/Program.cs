@@ -5,6 +5,10 @@ using System.IO;
 using Siemens.Engineering;
 using Siemens.Engineering.Cax;
 using Siemens.Engineering.HW;
+using Siemens.Engineering.HW.Extensions;
+using Siemens.Engineering.HW.Features;
+using Siemens.Engineering.HW.Utilities;
+using Siemens.Engineering.Connection;
 
 namespace HwGen
 {
@@ -13,21 +17,35 @@ namespace HwGen
     public string group;
     public string field;
     public string name;
+    public string parent;
     public string article_number;
-    public string addres_range;
+    public string version;
+    public string input_start_address;
+    public string subnet;
+    public string subnet_type;
     public string comment;
+
     public HWDevice(string device_group,
       string device_field,
      string device_name,
+     string device_parent,
      string device_article_number,
-      string device_address_range,
+     string device_version,
+      string device_input_start_address,
+      string device_subnet_type,
+      string device_subnet,
+      
      string device_comment)
     {
       group = device_group;
       field = device_field;
+      version = device_version;
       name = device_name;
+      parent = device_parent;
       article_number = device_article_number;
-      addres_range = device_address_range;
+      input_start_address = device_input_start_address;
+      subnet_type = device_subnet_type;
+      subnet = device_subnet;
       comment = device_comment;
     }
   }
@@ -35,7 +53,7 @@ namespace HwGen
   class TiaProject
   {
     TiaPortal tiaPortal;
-    Project project;
+    public Project project;
     string path;
     string name;
 
@@ -99,7 +117,7 @@ namespace HwGen
         Console.WriteLine("Save OK!");
       }
     }
-    public void CreateProject()
+    public bool CreateProject()
     {
       if (tiaPortal != null)
       {
@@ -112,25 +130,112 @@ namespace HwGen
         {
           Console.WriteLine("Could not create project! Error: {0}", e.ToString());
           Console.ReadKey();
-
+          return false;
         }
+        return true;
+      } else
+      {
+        return false;
       }
 
 
     }
-    public Device CreateDevice(string device_name, string article_number)
+    public bool CreateDevice(HWDevice device)
+    {
+      Device newDevice = null;
+      string typeIndentifier;
+      string device_name = device.group + device.field + device.name;
+      int child_slot;
+      try
+      {
+        if (device.version != "")
+          device.version = "/" + device.version;
+        typeIndentifier = "OrderNumber:" + device.article_number + device.version;
+        Console.WriteLine(typeIndentifier + ". Parent: {0}", device.parent);
+
+        if (device.parent == "-")
+        {
+
+          newDevice = project.Devices.CreateWithItem(typeIndentifier, device_name, device_name);
+          if (newDevice != null)
+          {
+            Console.WriteLine("Device {0} created! ", device_name);
+          }
+        } else
+        {
+          HardwareObject parentDevice = project.Devices.Find(device.group + device.field + device.parent);
+          DeviceItem parentRack = parentDevice.DeviceItems[0];
+
+          if (parentRack != null)
+          {
+            Console.WriteLine(GetFreePlugPosition(parentRack));
+            child_slot = GetFreePlugPosition(parentRack);
+            if (parentRack.CanPlugNew(typeIndentifier, device_name, child_slot))
+            {
+              parentRack.PlugNew(typeIndentifier, device_name, child_slot);
+              DeviceItem childDevice = parentRack.Items[child_slot - 1];
+              if (childDevice != null)
+              {
+
+                Console.WriteLine("Device {0} created! ", childDevice.Name);
+              }
+
+            }
+
+          }
+
+        }
+
+      } catch (Exception e)
+      {
+        Console.WriteLine("Could not create device {1}! Error: {0}", e.ToString(), device_name);
+        Console.ReadKey();
+        return false;
+      }
+      return true;
+    }
+    public bool CreateSubnet(string subnet_type, string subnet_name)
     {
       try
       {
-        Device device = project.Devices.Create(article_number, device_name);
-        return device;
+        Subnet subnet = project.Subnets.Create(GetSubnetTypeIndetifier(subnet_type), subnet_name);
+        return true;
       } catch (Exception e)
       {
-        Console.WriteLine("Could not create device! Error: {0}", e.ToString());
-        Console.ReadKey();
-
+        Console.WriteLine("Failed to create subnet {0}:{1}", subnet_name, e.ToString());
       }
-      return null;
+      return false;
+    }
+    public bool ConnectToSubnet(Device device, Subnet subnet)
+    {
+      NetworkInterface connectionInterface;
+      foreach (DeviceItem item in device.DeviceItems)
+        
+        if (item.Name == device.Name)
+          foreach (DeviceItem netInterface in item.DeviceItems)
+          {
+            if (netInterface.Name.Contains(GetSubnetType(subnet)))
+            {
+              connectionInterface = netInterface.GetService<Siemens.Engineering.HW.Features.NetworkInterface>();
+              
+              Node node = connectionInterface.Nodes[0];
+              node.ConnectToSubnet(subnet);
+              
+              IoSystem ioSystem = subnet.IoSystems[0];
+              IoController ioController = connectionInterface.
+              
+              return true;
+            }
+          }
+      return false;
+    }
+    public bool SetProperty(DeviceItem childDevice, int inputStartAddress, int outputStartAddress)
+    {
+      
+      AddressController addressController =((IEngineeringServiceProvider)childDevice).GetService<AddressController>();
+      AddressComposition addresses = childDevice.Addresses;
+      //Address InAddress = ((AddressComposition)addresses).
+      return false;
     }
     public bool ImportFromCSV(string csv_file_name)
     {
@@ -141,53 +246,50 @@ namespace HwGen
 
       try
       {
+        Console.WriteLine("Reading CSV...");
         raw_lines = File.ReadAllLines(csv_file_name);
         string[] device_lines = new string[raw_lines.Length - 1];
         headers = raw_lines[0].Split(',');
         Array.Copy(raw_lines, 1, device_lines, 0, raw_lines.Length - 1);
-
         foreach (string line in device_lines)
         {
-          Console.WriteLine(line);
           HWDevice hw_device;
           string[] properties = line.Split(',');
           string group = properties[0];
           string field = properties[1];
           string name = properties[2];
-          string article_number = properties[3];
-          string address_range = properties[4];
-          string comment = properties[5];
-          hw_device = new HWDevice(group, field, name, article_number, address_range, comment);
+          string parent = properties[3];
+          string article_number = properties[4];
+          string version = properties[5];
+          string input_start_address = properties[6];
+          string subnet_type = properties[7];
+          string subnet = properties[8];
+          string comment = properties[9];
+          hw_device = new HWDevice(group, field, name, parent, article_number, version, input_start_address, subnet_type, subnet, comment);
           device_list.Add(hw_device);
-
         }
       } catch (Exception e)
       {
         Console.WriteLine("{0}", e.ToString());
         Console.ReadKey();
         return false;
-
       }
-
-
-      Console.WriteLine("The project is created!");
       Console.WriteLine("Adding devices...");
       foreach (HWDevice device in device_list)
       {
-        try
+        Subnet device_subnet = project.Subnets.Find(device.subnet);
+        if (device_subnet == null)  
+          project.Subnets.Create(GetSubnetTypeIndetifier(device.subnet_type), device.subnet);
+        device_subnet = project.Subnets.Find(device.subnet);
+        CreateDevice(device);
+        if (device.parent == "-")
         {
-          CreateDevice(device.group + device.field + device.name, device.article_number);
-        } catch (Exception e)
-        {
-          Console.WriteLine("Can't add device {0}:{1}", device.group + device.field + device.name, e.ToString());
-          Console.ReadKey();
-          return false;
-        }
-        Console.WriteLine("Device {0} added!", device.group + device.field + device.name);
+          Device cur_device = project.Devices.Find(device.group + device.field + device.name);
+          ConnectToSubnet(cur_device, device_subnet);
+          }
       }
       Console.WriteLine("All devices added!");
       return true;
-
     }
     public bool ImportFromAML(string aml_file_name)
     {
@@ -224,15 +326,52 @@ namespace HwGen
       } else
         return false;
     }
+    static int GetFreePlugPosition(HardwareObject device)
+    {
+      foreach (PlugLocation item in device.GetPlugLocations())
+      {
+        return item.PositionNumber;
+      }
+      return -1;
+    }
+    static string GetSubnetTypeIndetifier(string subnet_type)
+    {
+      subnet_type = subnet_type.ToLower();
+      switch (subnet_type)
+      {
+        
+        case "pn":
+        case "profinet":
+        case "pthernet":
+          return "System:Subnet.Ethernet";
+        case "pb":
+        case "profibus":
+          return "System:Subnet.Profibus";
+        case "mpi":
+          return "System:Subnet.Mpi";
+        case "asi":
+          return "System:Subnet.Asi";
+        default:
+          return "System:Subnet.Ethernet";
+      }
+      
+    }
+    static string GetSubnetType(Subnet subnet)
+    {
+      switch(subnet.NetType){
+        case NetType.Ethernet:
+          return "PROFINET";
+        case NetType.Profibus:
+          return "DB";
 
+        default:
+          return "PROFINET";
+      }
+    }
   }
-
-
 
   class Program
   {
-
-
     static void Main(string[] args)
     {
       TiaProject tiaProject;
@@ -249,19 +388,18 @@ namespace HwGen
         switch (key)
         {
           case "-p":
-               project_name = GetArgumentValue(args, key);
+            project_name = GetArgumentValue(args, key);
             break;
-          case "-d":
+          case "-f":
             project_path = GetArgumentValue(args, key);
             break;
           case "-g":
             with_gui = true;
             break;
-        }
-        
+        } 
       }
       tiaProject = new TiaProject(project_name, project_path, with_gui);
-
+      
       // Handling arguments
       foreach (string key in args)
       {
@@ -299,6 +437,18 @@ namespace HwGen
               Environment.Exit(1);
             }
             break;
+          case "-d": //Debug feature
+            HWDevice test_device = new HWDevice("04", "+UH00", "-K100", "-", "6ES7 516-3FN01-0AB0", "V2.5", "-", "PN", "PN1", "Comment");
+
+            tiaProject.CreateSubnet("PN", "PN1");
+            tiaProject.CreateDevice(test_device);
+            Device sel_device = tiaProject.project.Devices.Find("04+UH00-K100");
+            Subnet subnet = tiaProject.project.Subnets.Find("PN1");
+            tiaProject.ConnectToSubnet(sel_device, subnet);
+
+
+            break;
+
           default:
             break;
         }
@@ -310,11 +460,9 @@ namespace HwGen
         tiaProject.CloseProject();
       }
 
-
       Console.WriteLine("Press any key to close application!");
       Console.ReadKey();
     }
-
 
     static string GetArgumentValue(string[] args, string arg)
     {

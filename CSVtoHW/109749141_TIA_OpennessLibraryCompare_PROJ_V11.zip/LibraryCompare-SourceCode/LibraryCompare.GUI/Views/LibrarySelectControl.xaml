@@ -1,0 +1,27 @@
+﻿<UserControl x:Class="LibraryCompare.GUI.Views.LibrarySelectControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:LibraryCompare.GUI.Views"
+             xmlns:viewModels="clr-namespace:LibraryCompare.GUI.ViewModels"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=viewModels:LibrarySelectViewModel}"
+             d:DesignHeight="60" d:DesignWidth="455">
+    <DockPanel Background="{StaticResource LightBrush}">
+        <local:FileBrowserControl Path="{Binding FilePath, Mode=TwoWay}"
+                                  Filter="All Files|*.*|TIA Portal V14 Project|*.ap14|TIA Portal V14 Library|*.al14"
+                                  Height="30"
+                                  DockPanel.Dock="Top" />
+        <Border DockPanel.Dock="Top"
+                Height="1"
+                Background="{StaticResource BrushTiles}" />
+        <Label Content="{Binding FileType, Mode=OneWay}"
+               Width="60"
+               DockPanel.Dock="Left" />
+        <Border DockPanel.Dock="Left"
+                Width="1"
+                Background="{StaticResource BrushTiles}" />
+        <Label Content="{Binding FileName, Mode=OneWay}" />
+    </DockPanel>
+</UserControl>

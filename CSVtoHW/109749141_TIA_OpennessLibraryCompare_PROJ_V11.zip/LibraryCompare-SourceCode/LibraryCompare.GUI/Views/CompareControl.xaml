@@ -1,0 +1,53 @@
+﻿<UserControl x:Class="LibraryCompare.GUI.Views.CompareControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d"
+             d:DesignHeight="51" d:DesignWidth="100">
+    <DockPanel>
+        <StackPanel Orientation="Horizontal"
+                    Height="25"
+                    DockPanel.Dock="Bottom">
+            <ToggleButton IsChecked="{Binding FilterEqual}"
+                          Focusable="False"
+                          Width="25"
+                          Height="25">
+                <Image Source="{StaticResource CompareEqual}"
+                       IsEnabled="{Binding IsChecked, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ToggleButton}}}"
+                       Style="{StaticResource DisabledImageButton}" />
+            </ToggleButton>
+            <ToggleButton IsChecked="{Binding FilterConflict}"
+                          Focusable="False"
+                          Width="25"
+                          Height="25">
+                <Image Source="{StaticResource CompareDiff}"
+                       IsEnabled="{Binding IsChecked, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ToggleButton}}}"
+                       Style="{StaticResource DisabledImageButton}" />
+            </ToggleButton>
+            <ToggleButton IsChecked="{Binding FilterUnEqual}"
+                          Focusable="False"
+                          Width="25"
+                          Height="25">
+                <Image Source="{StaticResource CompareUnEqual}"
+                       IsEnabled="{Binding IsChecked, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ToggleButton}}}"
+                       Style="{StaticResource DisabledImageButton}" />
+            </ToggleButton>
+            <ToggleButton IsChecked="{Binding FilterNone}"
+                          Focusable="False"
+                          Width="25"
+                          Height="25">
+                <Image Source="{StaticResource CompareNone}"
+                       IsEnabled="{Binding IsChecked, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ToggleButton}}}"
+                       Style="{StaticResource DisabledImageButton}" />
+            </ToggleButton>
+        </StackPanel>
+        <Button Command="{Binding CompareCommand}"
+                Focusable="False"
+                DockPanel.Dock="Top">
+            <Image Source="{StaticResource Copmare}"
+                   IsEnabled="{Binding IsEnabled, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Button}}}"
+                   Style="{StaticResource DisabledImageButton}" />
+        </Button>
+    </DockPanel>
+</UserControl>

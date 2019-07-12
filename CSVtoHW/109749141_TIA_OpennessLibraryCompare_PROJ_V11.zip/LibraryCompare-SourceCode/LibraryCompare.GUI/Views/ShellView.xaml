@@ -1,0 +1,128 @@
+﻿<Window x:Class="LibraryCompare.GUI.Views.ShellView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:system="clr-namespace:System;assembly=mscorlib"
+        xmlns:util="clr-namespace:LibraryCompare.GUI.Utilities"
+        xmlns:views="clr-namespace:LibraryCompare.GUI.Views"
+        xmlns:viewModels="clr-namespace:LibraryCompare.GUI.ViewModels"
+        mc:Ignorable="d"
+        d:DataContext="{d:DesignInstance Type=viewModels:ShellViewModel}"
+        Title="Library Compare" Height="768" Width="1024" ResizeMode="CanResizeWithGrip" WindowStartupLocation="CenterScreen">
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+        <ObjectDataProvider x:Key="DetailVisibility"
+                            MethodName="GetValues"
+                            ObjectType="{x:Type system:Enum}">
+            <ObjectDataProvider.MethodParameters>
+                <x:Type TypeName="util:DetailVisibility"/>
+            </ObjectDataProvider.MethodParameters>
+        </ObjectDataProvider>
+    </Window.Resources>
+    <DockPanel>
+
+        <ToolBarTray Height="28"
+                     DockPanel.Dock="Top"
+                     Background="{StaticResource GroundShadow}">
+            <ToolBar ToolBarTray.IsLocked="True"
+                     Height="28"
+                     Background="{StaticResource LightShadow}"
+                     Foreground="{StaticResource DarkBrush}"
+                     BorderBrush="{StaticResource BorderShadow}"
+                     BorderThickness="1" >
+                <ComboBox ItemsSource="{Binding Source={StaticResource DetailVisibility}}" SelectedItem="{Binding TypeResults.ShowDetails}" Width="90" />
+                <CheckBox IsChecked="{Binding TypeResults.ShowOutDated}">
+                    <Image Source="{StaticResource Outdated}"
+                           Style="{StaticResource DisabledImageButton}" />
+                    <CheckBox.ToolTip>
+                        <TextBlock Text="Highlight outdated Elements"/>
+                    </CheckBox.ToolTip>
+                </CheckBox>
+                <Button Command="{Binding DetailCompareCommand}">
+                    <Image Source="{StaticResource DetailCompare}"
+                           Style="{StaticResource DisabledImageButton}" />
+                    <Button.ToolTip>
+                        <TextBlock Text="Start DetailCompare of selected types"/>
+                    </Button.ToolTip>
+                </Button>
+                <Button Command="{Binding SaveResultsCommand}">
+                    <Image Source="{StaticResource Save}"
+                           Style="{StaticResource DisabledImageButton}" />
+                    <Button.ToolTip>
+                        <TextBlock Text="Save Compare Result to csv" />
+                    </Button.ToolTip>
+                </Button>
+            </ToolBar>
+        </ToolBarTray>
+        
+        <Border DockPanel.Dock="Top"
+                Height="3"
+                Background="{StaticResource BackgroundBrush}" />
+        <Border DockPanel.Dock="Left"
+                Width="3"
+                Background="{StaticResource BackgroundBrush}" />
+        <Border DockPanel.Dock="Right"
+                Width="3"
+                Background="{StaticResource BackgroundBrush}" />
+
+        <StatusBar Height="23"
+                   DockPanel.Dock="Bottom"
+                   Background="{StaticResource BackgroundBrush}"
+                   Foreground="{StaticResource LightBrush}" >
+            <Label Content="{Binding WorkState}" Foreground="{StaticResource LightBrush}" Padding="5,1"></Label>
+        </StatusBar>
+
+        <Grid Background="{StaticResource BackgroundBrush}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition />
+                <ColumnDefinition Width="100" />
+                <ColumnDefinition />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="60" />
+                <RowDefinition Height="31*" MinHeight="150" />
+            </Grid.RowDefinitions>
+
+            <views:LibrarySelectControl DataContext="{Binding LibraryLeft}"
+                                        BorderThickness="1"
+                                        BorderBrush="{StaticResource BackgroundBrush}"
+                                        Grid.Column="0"
+                                        Grid.Row="0" />
+
+            <views:LibrarySelectControl DataContext="{Binding LibraryRight}"
+                                        BorderThickness="1"
+                                        BorderBrush="{StaticResource BackgroundBrush}"
+                                        Grid.Column="2"
+                                        Grid.Row="0" />
+
+            <views:CompareControl DataContext="{Binding CompareInfo}"
+                                  Grid.Column="1"
+                                  Grid.Row="0" />
+
+            <TabControl Grid.Column="0"
+                        Grid.ColumnSpan="3"
+                        Grid.Row="1"
+                        Padding="0,2,0,0"
+                        Background="{StaticResource BackgroundBrush}"
+                        BorderThickness="0">
+                <TabItem Header="Types" Width="100">
+                    <views:TypeResultControl DataContext="{Binding TypeResults}" />
+                </TabItem>
+                <TabItem Header="Master Copies" Width="100">
+                    <views:CopyResultControl DataContext="{Binding CopyResults}" />
+                </TabItem>
+            </TabControl>
+
+            <Grid Grid.ColumnSpan="3"
+                  Grid.Column="0"
+                  Grid.Row="0"
+                  Grid.RowSpan="2"
+                  Visibility="{Binding IsRunning, Converter={StaticResource BooleanToVisibilityConverter}, FallbackValue=Visible}"
+                  Background="#99BBB7B7">
+                <ProgressBar Height="25" Margin="50" IsIndeterminate="True" Foreground="#FF01B6D3"/>
+                <Label Content="Loading.." Height="25" Width="120" HorizontalContentAlignment="Center"/>
+            </Grid>
+        </Grid>
+    </DockPanel>
+</Window>

@@ -1,0 +1,23 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Images from TIA Portal -->
+    <BitmapImage x:Key="Copmare" UriSource="/LibraryCompare;component/Resources/Images/CompareMode.ico" />
+    <BitmapImage x:Key="CompareDiff" UriSource="/LibraryCompare;component/Resources/Images/Compare_DiffsBelow.ico" />
+    <BitmapImage x:Key="CompareEqual" UriSource="/LibraryCompare;component/Resources/Images/Compare_Equal.ico" />
+    <BitmapImage x:Key="CompareNone" UriSource="/LibraryCompare;component/Resources/Images/Compare_NotCompared.ico" />
+    <BitmapImage x:Key="CompareNotExisting"
+                 UriSource="/LibraryCompare;component/Resources/Images/Compare_NotExisting.ico" />
+    <BitmapImage x:Key="CompareLeft" UriSource="/LibraryCompare;component/Resources/Images/Compare_Only1.ico" />
+    <BitmapImage x:Key="CompareRight" UriSource="/LibraryCompare;component/Resources/Images/Compare_Only2.ico" />
+    <BitmapImage x:Key="CompareUnEqual" UriSource="/LibraryCompare;component/Resources/Images/Compare_UnEqual.ico" />
+    <BitmapImage x:Key="OpenFolder" UriSource="/LibraryCompare;component/Resources/Images/Folder-Open-icon.png" />
+    <BitmapImage x:Key="Refresh" UriSource="/LibraryCompare;component/Resources/Images/Refresh-icon.png" />
+    <BitmapImage x:Key="DetailCompare" UriSource="/LibraryCompare;component/Resources/Images/DetailCompare.png" />
+    <BitmapImage x:Key="Save" UriSource="/LibraryCompare;component/Resources/Images/Save.ico" />
+    <BitmapImage x:Key="Outdated" UriSource="/LibraryCompare;component/Resources/Images/Outdated.png" />
+
+    <!-- Images from Font Awesome 
+    <BitmapImage x:Key="CheckActive" UriSource="../Images/fa-check_active.png" />-->
+
+</ResourceDictionary>
