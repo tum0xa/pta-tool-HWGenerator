@@ -221,8 +221,8 @@ namespace HwGen
               Node node = connectionInterface.Nodes[0];
               node.ConnectToSubnet(subnet);
               
-              IoSystem ioSystem = subnet.IoSystems[0];
-              IoController ioController = connectionInterface.
+              //IoSystem ioSystem = subnet.IoSystems.;
+              //IoController ioController = connectionInterface.IoControllers[0];
               
               return true;
             }
